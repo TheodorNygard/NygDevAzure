@@ -1,0 +1,63 @@
+#cloud-config
+package_update: true
+
+disk_setup:
+  /dev/disk/azure/scsi1/lun0:
+    table_type: gpt
+    layout: true
+    overwrite: false
+
+fs_setup:
+  - device: /dev/disk/azure/scsi1/lun0-part1
+    filesystem: ext4
+    overwrite: false
+
+mounts:
+  - ["/dev/disk/azure/scsi1/lun0-part1", "/foundry", "ext4", "defaults,noatime,nofail", "0", "0"]
+
+users:
+  - default
+  - name: srv_foundry
+    system: true
+    shell: /bin/bash
+    home: /foundry/home
+
+runcmd:
+  - apt-get install -y -q debian-keyring debian-archive-keyring apt-transport-https curl
+  - curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  - curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
+  - curl -fsSL 'https://deb.nodesource.com/setup_current.x' | bash -
+  - apt-get install -y -q caddy nodejs
+  - mountpoint -q /foundry || mount /foundry
+  - chown -R srv_foundry:srv_foundry /foundry/foundrydata /foundry/foundryvtt /foundry/home
+  - chown -R caddy:caddy /foundry/caddy
+  - systemctl stop caddy
+  - ln -sf /foundry/caddy/Caddyfile /etc/caddy/Caddyfile
+  - |
+    mkdir -p /etc/systemd/system/caddy.service.d
+    cat > /etc/systemd/system/caddy.service.d/override.conf << 'EOF'
+    [Service]
+    Environment=XDG_CONFIG_HOME=/foundry/caddy/config
+    Environment=XDG_DATA_HOME=/foundry/caddy/data
+    EOF
+  - systemctl daemon-reload
+  - systemctl start caddy
+  - |
+    cat > /etc/systemd/system/foundry.service << 'EOF'
+    [Unit]
+    Description=Foundry VTT
+    After=network.target
+
+    [Service]
+    User=srv_foundry
+    Group=srv_foundry
+    ExecStart=/usr/bin/node /foundry/foundryvtt/main.js --dataPath=/foundry/foundrydata
+    Restart=on-failure
+    RestartSec=5
+
+    [Install]
+    WantedBy=multi-user.target
+    EOF
+  - systemctl daemon-reload
+  - systemctl enable foundry
+  - systemctl start foundry

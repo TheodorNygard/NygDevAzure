@@ -1,0 +1,117 @@
+trigger: none
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+- group: NygDevVault
+
+stages:
+- stage: DeployInfrastructure
+  displayName: 'Deploy Azure Infrastructure with Terraform'
+  jobs:
+  - job: TerraformDeploy
+    displayName: 'Terraform Deployment'
+    steps:
+    
+    # Install Terraform
+    - task: Bash@3
+      displayName: 'Install Terraform'
+      inputs:
+        targetType: 'inline'
+        script: |
+          TERRAFORM_VERSION=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | jq -r .current_version)
+          curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" -o terraform.zip
+          unzip -o terraform.zip -d /usr/local/bin/
+          terraform version
+    
+    # Retrieve SSH Public Key
+    - task: AzureCLI@2
+      displayName: 'Retrieve SSH Public Key'
+      inputs:
+        azureSubscription: 'AzDevOps'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          SSH_KEY=$(az sshkey show \
+            --resource-group FreeServices \
+            --name NygDev \
+            --query publicKey \
+            --output tsv)
+
+          echo "##vso[task.setvariable variable=sshPublicKey;issecret=true]$SSH_KEY"
+    
+    # Discover newest Ubuntu daily image offer
+    - task: AzureCLI@2
+      displayName: 'Find Latest Ubuntu Daily Offer'
+      inputs:
+        azureSubscription: 'AzDevOps'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          LATEST_OFFER=$(az vm image list-offers \
+            --publisher Canonical \
+            --location norwayeast \
+            --query "[?contains(name, 'daily') && contains(name, 'ubuntu-')].name" \
+            --output tsv \
+            | sort -V \
+            | tail -1)
+
+          if [ -z "$LATEST_OFFER" ]; then
+            echo "##[error]No Ubuntu daily offer found"
+            exit 1
+          fi
+
+          echo "Found latest daily offer: $LATEST_OFFER"
+          echo "##vso[task.setvariable variable=ubuntuOffer]$LATEST_OFFER"
+    
+    # Terraform Init
+    - task: TerraformTaskV4@4
+      displayName: 'Terraform Init'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(Build.SourcesDirectory)/terraform'
+        backendServiceArm: 'AzDevOps'
+        backendAzureRmResourceGroupName: 'Automation'
+        backendAzureRmStorageAccountName: 'nygdevtfstate'
+        backendAzureRmContainerName: 'tfstate'
+        backendAzureRmKey: 'azure-infrastructure.tfstate'
+        backendAzureRmUseEntraIdAuth: true
+    
+    # Terraform Validate
+    - task: TerraformTaskV4@4
+      displayName: 'Terraform Validate'
+      inputs:
+        provider: 'azurerm'
+        command: 'validate'
+        workingDirectory: '$(Build.SourcesDirectory)/terraform'
+    
+    # Terraform Plan
+    - task: TerraformTaskV4@4
+      displayName: 'Terraform Plan'
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        workingDirectory: '$(Build.SourcesDirectory)/terraform'
+        commandOptions: '-var="home_ip=$(HomeIp)" -var="ssh_public_key=$(sshPublicKey)" -var="ubuntu_offer=$(ubuntuOffer)" -out=tfplan'
+        environmentServiceNameAzureRM: 'AzDevOps'
+    
+    # Terraform Apply
+    - task: TerraformTaskV4@4
+      displayName: 'Terraform Apply'
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        workingDirectory: '$(Build.SourcesDirectory)/terraform'
+        commandOptions: 'tfplan'
+        environmentServiceNameAzureRM: 'AzDevOps'
+    
+    # Display Outputs
+    - task: TerraformTaskV4@4
+      displayName: 'Terraform Output'
+      inputs:
+        provider: 'azurerm'
+        command: 'output'
+        workingDirectory: '$(Build.SourcesDirectory)/terraform'
+        environmentServiceNameAzureRM: 'AzDevOps'
