@@ -39,7 +39,7 @@ stages:
             --query publicKey \
             --output tsv)
 
-          echo "##vso[task.setvariable variable=sshPublicKey;issecret=true]$SSH_KEY"
+          echo "##vso[task.setvariable variable=SshPublicKey;issecret=true]$SSH_KEY"
     
     # Discover newest Ubuntu daily image offer
     - task: AzureCLI@2
@@ -63,7 +63,7 @@ stages:
           fi
 
           echo "Found latest daily offer: $LATEST_OFFER"
-          echo "##vso[task.setvariable variable=ubuntuOffer]$LATEST_OFFER"
+          echo "##vso[task.setvariable variable=UbuntuOffer]$LATEST_OFFER"
     
     # Terraform Init
     - task: TerraformTaskV4@4
@@ -94,7 +94,7 @@ stages:
         provider: 'azurerm'
         command: 'plan'
         workingDirectory: '$(Build.SourcesDirectory)/terraform'
-        commandOptions: '-var="home_ip=$(HomeIp)" -var="ssh_public_key=$(sshPublicKey)" -var="ubuntu_offer=$(ubuntuOffer)" -out=tfplan'
+        commandOptions: '-var="home_ip=$(HomeIp)" -var="ssh_public_key=$(SshPublicKey)" -var="ubuntu_offer=$(UbuntuOffer)" -out=tfplan'
         environmentServiceNameAzureRM: 'AzDevOps'
     
     # Terraform Apply

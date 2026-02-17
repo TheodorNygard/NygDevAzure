@@ -48,7 +48,7 @@ resource "azurerm_network_security_group" "nygdev" {
 
 # Virtual Network
 resource "azurerm_virtual_network" "nygdev" {
-  name                = "NygDev-vNet"
+  name                = "NygDev-VNet"
   location            = var.location
   resource_group_name = azurerm_resource_group.network.name
   address_space       = ["10.0.0.0/24"]
