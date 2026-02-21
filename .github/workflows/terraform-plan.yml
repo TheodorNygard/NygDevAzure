@@ -29,6 +29,16 @@ jobs:
           unzip -o terraform.zip -d /usr/local/bin/
           terraform version
 
+      - name: 'Retrieve Home IP from Key Vault'
+        run: |
+          HOME_IP=$(az keyvault secret show \
+            --vault-name nygdev \
+            --name HomeIP \
+            --query value \
+            --output tsv)
+          echo "::add-mask::$HOME_IP"
+          echo "HOME_IP=$HOME_IP" >> $GITHUB_ENV
+
       - name: 'Retrieve SSH Public Key'
         run: |
           SSH_KEY=$(az sshkey show \
@@ -59,7 +69,7 @@ jobs:
         working-directory: NygDevAzure/terraform
         run: |
           terraform plan \
-            -var="home_ip=${{ secrets.HOME_IP }}" \
+            -var="home_ip=$HOME_IP" \
             -var="ssh_public_key=$SSH_PUBLIC_KEY" \
             -var="ubuntu_offer=$UBUNTU_OFFER" \
             -detailed-exitcode
