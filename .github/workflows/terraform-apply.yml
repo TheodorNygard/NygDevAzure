@@ -35,7 +35,7 @@ jobs:
       - name: 'Retrieve Home IP from Key Vault'
         run: |
           HOME_IP=$(az keyvault secret show \
-            --vault-name nygdev \
+            --vault-name ${{ secrets.AZURE_KEYVAULT_NAME }} \
             --name HomeIP \
             --query value \
             --output tsv)
@@ -75,6 +75,7 @@ jobs:
             -var="home_ip=$HOME_IP" \
             -var="ssh_public_key=$SSH_PUBLIC_KEY" \
             -var="ubuntu_offer=$UBUNTU_OFFER" \
+            -var="admin_username=${{ secrets.AZURE_VM_USERNAME }}" \
             -out=tfplan
 
       - name: 'Upload Plan'

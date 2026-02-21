@@ -31,7 +31,7 @@ variable "vm_size" {
 variable "admin_username" {
   description = "Admin username for the VM"
   type        = string
-  default     = "admthenyg"
+  sensitive   = true
 }
 
 variable "network_resource_group" {
