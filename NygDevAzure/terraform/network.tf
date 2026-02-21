@@ -56,7 +56,7 @@ resource "azurerm_virtual_network" "nygdev" {
 
 # Subnet
 resource "azurerm_subnet" "rpg" {
-  name                 = "rpg"
+  name                 = "RPG"
   resource_group_name  = azurerm_resource_group.network.name
   virtual_network_name = azurerm_virtual_network.nygdev.name
   address_prefixes     = ["10.0.0.0/29"]
