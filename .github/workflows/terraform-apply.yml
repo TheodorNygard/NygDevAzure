@@ -9,6 +9,7 @@ permissions:
 jobs:
   plan:
     runs-on: ubuntu-latest
+    environment: NygDevAzure
     env:
       ARM_USE_CLI: "true"
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
