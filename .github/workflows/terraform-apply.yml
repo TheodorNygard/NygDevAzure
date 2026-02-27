@@ -46,7 +46,7 @@ jobs:
         run: |
           SSH_KEY=$(az sshkey show \
             --resource-group rg-nygdev-security \
-            --name NygDev-ed25519 \
+            --name nygdev-ed25519 \
             --query publicKey \
             --output tsv)
           echo "SSH_PUBLIC_KEY<<EOF" >> $GITHUB_ENV
