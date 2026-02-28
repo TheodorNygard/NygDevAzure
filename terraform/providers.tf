@@ -9,7 +9,7 @@ terraform {
   }
 
   backend "azurerm" {
-    resource_group_name  = "Automation"
+    resource_group_name  = "rg-nygdev-data"
     storage_account_name = "nygdevtfstate"
     container_name       = "tfstate"
     key                  = "azure-infrastructure.tfstate"
