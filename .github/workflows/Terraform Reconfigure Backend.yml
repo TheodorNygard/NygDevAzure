@@ -1,7 +1,6 @@
 Terraform reconfigure · YML
 name: Terraform Reconfigure Backend
-
-on: workflow_dispatch
+"on": workflow_dispatch
 
 permissions:
   id-token: write
