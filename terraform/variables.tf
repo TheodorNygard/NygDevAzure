@@ -43,7 +43,7 @@ variable "network_resource_group" {
 variable "vm_resource_group" {
   description = "Resource group for VM resources"
   type        = string
-  default     = "rg-rpg"
+  default     = "rg-nygdev-vm"
 }
 
 variable "ubuntu_offer" {
