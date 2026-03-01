@@ -62,4 +62,4 @@ runcmd:
     EOF
   - systemctl daemon-reload
   - systemctl enable foundry
-  - systemctl start foundry
+  - reboot
