@@ -25,7 +25,7 @@ variable "vm_name" {
 variable "vm_size" {
   description = "Size of the virtual machine"
   type        = string
-  default     = "Standard_D4as_v5"
+  default     = "Standard_D4als_v6"
 }
 
 variable "admin_username" {
