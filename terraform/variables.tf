@@ -47,7 +47,7 @@ variable "vm_resource_group" {
 }
 
 variable "ubuntu_offer" {
-  description = "Ubuntu image offer name (resolved by pipeline)"
+  description = "Ubuntu image offer name"
   type        = string
-  default     = "ubuntu-25_10-daily"
+  default     = "ubuntu-25_10"
 }
